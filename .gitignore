@@ -1,1 +1,20 @@
 measles_data_27_08.csv
+
+# Python environments and tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build artifacts and local application state
+build/
+dist/
+*.egg-info/
+.nicegui/
+.dynaval/
+.DS_Store
