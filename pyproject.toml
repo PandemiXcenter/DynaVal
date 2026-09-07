@@ -3,6 +3,8 @@ name = "dynaval"
 version = "0.1.0"
 description = "A local NiceGUI desktop app for correcting datasets against source images."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "httpx>=0.28.1",

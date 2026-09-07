@@ -307,6 +307,7 @@ def test_spec_includes_local_assets_and_selects_native_bundle(
     resources = calls["Analysis"]["datas"]
     assert any(path.endswith("styles.css") for path, _ in resources)
     assert any(path.endswith("image_viewer.js") for path, _ in resources)
+    assert (str(ROOT / "LICENSE"), "licenses") in resources
     assert calls["Analysis"]["pathex"] == [str(ROOT / "src")]
     assert calls["EXE"]["console"] is False
     assert calls["EXE"]["exclude_binaries"] is True

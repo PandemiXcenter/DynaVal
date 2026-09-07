@@ -159,8 +159,11 @@ license file in their installed wheel. Review those metadata notices and the
 bundled interpreter/native-library licensing when preparing a public release;
 automated collection is not a substitute for that distribution review.
 
-The project license, release signing/notarization and final release notes remain
-maintainer choices. No Developer ID or Windows Authenticode signing is configured.
+DynaVal is licensed under [MIT](../LICENSE). The spec includes its license under
+`licenses/LICENSE` alongside the separate dependency notices. Python distributions
+also include the license through `pyproject.toml`. Release signing/notarization and
+final release notes remain maintainer choices. No Developer ID or Windows
+Authenticode signing is configured.
 PyInstaller may apply the ad-hoc macOS signature needed to run locally; that is
 not Developer ID signing or notarization.
 

@@ -692,7 +692,8 @@ includes explicit `src` package resolution, application CSS/Vue resources,
 platform-specific `.icns`/`.ico` icons, a macOS bundle identifier, and version
 metadata. macOS BUNDLE construction and Windows resources are conditional on the
 build platform. NiceGUI/pywebview assets and native import hooks are retained.
-The spec collects license/notice metadata only from the runtime dependency graph.
+The spec includes DynaVal's MIT LICENSE and collects third-party license/notice
+metadata from the runtime dependency graph.
 Use the locked project environment, never a separately installed PyInstaller.
 
 Build the native bundle directly with:
@@ -752,7 +753,8 @@ Signing/notarization and Windows signing are release-stage configuration owned
 by the maintainer. Prepare and verify both distributions before that stage; report
 their actual signing status. Publishing a GitHub Release is future work. Before
 publication, settle supported OS versions/architectures, signing, repository
-license, and release metadata in the user's workflow.
+release metadata and third-party notices in the user's workflow. DynaVal's own
+license is MIT, recorded in LICENSE and the package metadata.
 
 ## 9. Verification record and remaining platform work
 
@@ -785,7 +787,7 @@ not certified by the local checks.
 
 The release workflow is implemented locally; its first GitHub-hosted runs are
 still to be verified after pushing. No public release has been created. The
-maintainer controls signing, license decisions, release notes and publication.
+maintainer controls signing, release notes and publication. The project is MIT licensed.
 The workflow passed actionlint 1.7.12 locally; all 34 packaging/release-helper
 tests passed, including version/tag drift, missing platform downloads, checksum
 corruption and mislabeled build metadata. Ruff and helper type checks also passed.

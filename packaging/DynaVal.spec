@@ -25,6 +25,7 @@ datas += [
     (str(ROOT / "src/dynaval/ui/styles.css"), "dynaval/ui"),
     (str(ROOT / "src/dynaval/ui/components/image_viewer.js"), "dynaval/ui/components"),
     (str(generated / "licenses"), "licenses"),
+    (str(ROOT / "LICENSE"), "licenses"),
 ]
 hiddenimports = collect_submodules("dynaval") + [
     "uvicorn.logging", "uvicorn.loops.auto", "uvicorn.protocols.http.auto",

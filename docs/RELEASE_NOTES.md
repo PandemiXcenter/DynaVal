@@ -99,4 +99,6 @@ Distribute the complete macOS `.app` ZIP or Windows onedir ZIP with its `.sha256
 file. Windows requires WebView2 and a suitable .NET Framework runtime. See
 [PACKAGING.md](PACKAGING.md) for platform prerequisites, exact commands, the native
 smoke checklist and artifact layout. The maintainer owns Actions YAML, project
-licensing, target-runner support claims, signing, release metadata and publication.
+target-runner support claims, signing, release metadata and publication. DynaVal
+uses the [MIT license](../LICENSE); future builds include it alongside dependency
+notices. Previously generated archives are unchanged.

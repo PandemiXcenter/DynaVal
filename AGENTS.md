@@ -6,6 +6,13 @@ Always use uv as package manager, script runner, and everything else.
 
 ## Product and scope
 
+Keep README.md short and aimed at application users: purpose, version/platforms,
+features, downloads, building from source, feedback, and licensing. Technical
+contracts, architecture, test results and release procedures belong in this file,
+PIPELINE.md and docs/. DynaVal is MIT licensed; preserve the root LICENSE and
+include it in source/Python distributions and native bundles alongside third-party
+notices. Third-party dependencies retain their own licenses.
+
 DynaVal is a local, single-reviewer NiceGUI desktop application for correcting
 datasets against source images. Producing usable corrected data is the primary
 outcome; transcription-accuracy reporting is secondary. Keep the application
