@@ -16,8 +16,9 @@ The workflow is: import a dataset, select image-reference columns, select fields
 to review, configure corrections/skipping, confirm or correct each field, continue
 unfinished work with the saved seed/order, and export the corrected dataset plus
 a field-by-field review log. The initial release targets both macOS and Windows.
-Linux is deferred. The user will set up GitHub Actions to build the packages;
-provide reproducible build commands and platform requirements for that workflow.
+Linux is deferred. `.github/workflows/release.yml` builds both platforms with uv,
+tests the packaged app, and prepares draft releases for matching version tags.
+Manual workflow runs produce build artifacts only; publication stays with the user.
 
 The patient-registry request in PIPELINE.md is a motivating example, not a fixed
 schema. Never hardcode its field list, medical concepts, or review criteria into
@@ -211,6 +212,8 @@ filesystem paths, per-user data directories, and session locking for both system
 Build on the target operating system and architecture. macOS and Windows are
 required release targets; report each platform's actual verification separately.
 Do not claim untested architectures, signing, or notarization support. Follow the
-build handoff in PIPELINE.md; the user owns GitHub Actions setup. Keep README and
+build handoff in PIPELINE.md and the checked-in release workflow. Keep README and
 PIPELINE accurate about implemented behavior, defaults, limitations, and checks
-actually run. The user owns Actions YAML, signing/notarization and publication.
+actually run. The user controls signing/notarization and publication. Release
+automation must verify version/tag consistency and both platform downloads before
+creating a draft, and must never overwrite an already published release.

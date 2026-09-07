@@ -29,7 +29,90 @@ def load_support() -> types.ModuleType:
 
 
 release = load_module("build_release", "scripts/build_release.py")
+release_ci = load_module("release_ci", "scripts/release_ci.py")
 demo = load_module("create_demo", "scripts/create_demo.py")
+
+
+@pytest.fixture
+def release_project(tmp_path: Path) -> Path:
+    (tmp_path / "pyproject.toml").write_text('[project]\nversion = "0.2.1"\n')
+    package = tmp_path / "src/dynaval"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text('__version__ = "0.2.1"\n')
+    return tmp_path
+
+
+@pytest.mark.parametrize("tag", [None, "v0.2.1"])
+def test_ci_accepts_matching_version_or_manual_branch_build(
+    release_project: Path, tag: str | None
+) -> None:
+    assert release_ci.release_version(release_project, tag) == "0.2.1"
+
+
+@pytest.mark.parametrize("tag", ["v0.2.0", "0.2.1", "v0.2.1-rc1", "v0.2.1\n", ""])
+def test_ci_rejects_wrong_or_malformed_release_tag(release_project: Path, tag: str) -> None:
+    with pytest.raises(ValueError, match="Release tag"):
+        release_ci.release_version(release_project, tag)
+
+
+def test_ci_rejects_app_and_package_version_drift(release_project: Path) -> None:
+    (release_project / "src/dynaval/__init__.py").write_text('__version__ = "0.1.0"\n')
+    with pytest.raises(ValueError, match="versions must match"):
+        release_ci.release_version(release_project)
+
+
+@pytest.fixture
+def ci_downloads(tmp_path: Path) -> Path:
+    directory = tmp_path / "downloads"
+    directory.mkdir()
+    for system, architecture in [("macos", "arm64"), ("windows", "x86_64")]:
+        archive = directory / f"DynaVal-0.2.1-{system}-{architecture}.zip"
+        with zipfile.ZipFile(archive, "w") as bundle:
+            bundle.writestr("synthetic.txt", f"{system} fixture")
+        checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
+        archive.with_suffix(".zip.sha256").write_text(f"{checksum}  {archive.name}\n")
+        archive.with_suffix(".zip.json").write_text(
+            json.dumps(
+                {
+                    "application": "DynaVal",
+                    "version": "0.2.1",
+                    "platform": system,
+                    "architecture": architecture,
+                    "archive": archive.name,
+                    "sha256": checksum,
+                }
+            )
+        )
+    return directory
+
+
+def test_ci_verifies_both_complete_downloads(ci_downloads: Path) -> None:
+    release_ci.verify_downloads(ci_downloads, "0.2.1")
+
+
+@pytest.mark.parametrize("change", ["missing_platform", "missing_checksum", "extra", "corrupt"])
+def test_ci_blocks_incomplete_or_corrupt_downloads(ci_downloads: Path, change: str) -> None:
+    archive = ci_downloads / "DynaVal-0.2.1-windows-x86_64.zip"
+    if change == "missing_platform":
+        archive.unlink()
+    elif change == "missing_checksum":
+        archive.with_suffix(".zip.sha256").unlink()
+    elif change == "extra":
+        (ci_downloads / "unexpected.txt").write_text("not a release download")
+    else:
+        archive.write_bytes(b"damaged archive")
+    with pytest.raises(ValueError):
+        release_ci.verify_downloads(ci_downloads, "0.2.1")
+
+
+@pytest.mark.parametrize("key", ["version", "platform", "architecture", "archive", "sha256"])
+def test_ci_blocks_mislabeled_build_metadata(ci_downloads: Path, key: str) -> None:
+    sidecar = ci_downloads / "DynaVal-0.2.1-windows-x86_64.zip.json"
+    metadata = json.loads(sidecar.read_text())
+    metadata[key] = "wrong"
+    sidecar.write_text(json.dumps(metadata))
+    with pytest.raises(ValueError, match="metadata mismatch"):
+        release_ci.verify_downloads(ci_downloads, "0.2.1")
 
 
 @pytest.mark.parametrize(

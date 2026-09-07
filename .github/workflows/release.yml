@@ -1,0 +1,164 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  # Manual runs build downloadable artifacts without creating a release.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: macos-arm64
+            executable: dist/DynaVal.app/Contents/MacOS/DynaVal
+          - runner: windows-2025
+            target: windows-x86_64
+            executable: dist/DynaVal/DynaVal.exe
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv and select Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: '0.9.21'
+          python-version: '3.13'
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Check release version
+        run: uv run --no-project python scripts/release_ci.py version
+
+      - name: Install locked dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Check code
+        run: |
+          uv lock --check
+          uv run --no-sync ruff check .
+          uv run --no-sync ruff format --check .
+          uv run --no-sync mypy main.py src/dynaval scripts packaging/packaging_support.py packaging/create_icons.py
+
+      - name: Run regression tests
+        run: uv run --no-sync pytest -q
+
+      - name: Build and archive desktop app
+        run: uv run --no-sync --group build python scripts/build_release.py
+
+      - name: Install test browser
+        run: uv run --no-sync playwright install chromium
+
+      - name: Test packaged correction and restart workflow
+        env:
+          APP_EXECUTABLE: ${{ matrix.executable }}
+        run: uv run --no-sync pytest --run-browser tests/test_browser.py --app-executable "$APP_EXECUTABLE" -q
+
+      # Upload the ZIP, preserving the bundle's internal permissions and symlinks.
+      - name: Save release downloads
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-${{ matrix.target }}
+          path: |
+            dist/releases/*.zip
+            dist/releases/*.zip.sha256
+            dist/releases/*.zip.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+          overwrite: true
+
+      - name: Save failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: diagnostics-${{ matrix.target }}-${{ github.run_attempt }}
+          path: |
+            output/playwright/
+            build/DynaVal/warn-DynaVal.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  draft-release:
+    name: Prepare draft release
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release metadata
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv and select Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: '0.9.21'
+          python-version: '3.13'
+
+      - name: Download both platform builds
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-assets
+
+      - name: Verify versions and download checksums
+        run: uv run --no-project python scripts/release_ci.py verify release-assets
+
+      - name: Create or refresh draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if draft="$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')"; then
+            if [[ "$draft" != "true" ]]; then
+              echo 'This release is already published; its downloads will not be replaced.' >&2
+              exit 1
+            fi
+            gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          else
+            cat > "$RUNNER_TEMP/dynaval-release-notes.md" <<'NOTES'
+          Download the ZIP for macOS (Apple Silicon) or Windows (x64).
+
+          Extract the complete archive. On macOS, open DynaVal.app. On Windows,
+          open DynaVal.exe and keep its supporting files in the extracted folder.
+          Windows requires the WebView2 Runtime and .NET Framework.
+
+          These builds passed automated tests and a Chromium correction, restart,
+          resume and export workflow against each packaged executable. Native
+          desktop and clean-machine checks remain part of release review.
+
+          Developer ID signing/notarization and Windows release signing are not
+          configured. Review these download instructions and add the changes for
+          this version before publishing.
+          NOTES
+            gh release create "$RELEASE_TAG" release-assets/* \
+              --verify-tag --draft --prerelease \
+              --title "DynaVal $RELEASE_TAG" \
+              --notes-file "$RUNNER_TEMP/dynaval-release-notes.md"
+          fi

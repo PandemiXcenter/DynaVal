@@ -2,7 +2,9 @@
 
 DynaVal provides a local desktop workflow for correcting selected dataset fields
 against source images. This is a release-preparation draft; no GitHub Release,
-Actions workflow, release signature or notarization has been published.
+release signature or notarization has been published. A GitHub Actions workflow
+now prepares draft prereleases after macOS and Windows build/test jobs succeed;
+its first hosted runs remain to be verified.
 
 ## Included
 

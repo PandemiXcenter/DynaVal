@@ -11,8 +11,9 @@ corrections and saved draft. Follow-up passes revisit unresolved fields in the
 same order. The original input file is never changed.
 
 The application is generic across datasets and domains. Its initial distribution
-targets are macOS and Windows x64; Linux is deferred. Packaging commands are ready
-for the maintainer's GitHub Actions workflow. No public release has been published.
+targets are macOS and Windows x64; Linux is deferred. The
+[release workflow](.github/workflows/release.yml) builds both platforms and prepares
+a draft release from a matching version tag. No public release has been published.
 
 ## Run locally
 
@@ -151,7 +152,11 @@ This builds `packaging/DynaVal.spec`, archives the complete `.app` or Windows
 directory, and writes SHA-256 checksums and build metadata. See
 [docs/PACKAGING.md](docs/PACKAGING.md) for exact commands, platform requirements,
 the synthetic native smoke test, icons, notices and release handoff. The maintainer
-owns Actions YAML, signing/notarization, release publication and supported-OS claims.
+controls signing/notarization, release publication and supported-OS claims.
+After pushing the workflow to the default branch, use **Actions → Release → Run
+workflow** for a build-only test. Pushing a tag such as `v0.1.0` builds both targets
+and attaches verified downloads to a draft prerelease; publication stays manual.
+See the [step-by-step release instructions](docs/PACKAGING.md#github-actions-release-workflow).
 The [v0.1.0 release draft](docs/RELEASE_NOTES.md) records included behavior and
 the remaining distribution verification.
 

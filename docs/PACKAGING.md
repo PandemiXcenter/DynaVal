@@ -2,11 +2,62 @@
 
 DynaVal builds on its target operating system with Python 3.13 and the locked uv
 environment. macOS and Windows x64 are release targets; Linux is deferred. The
-maintainer owns GitHub Actions and publication. These commands do not publish a
-release, configure credentials, or sign it for distribution.
+maintainer controls publication and signing. The local build commands below do
+not publish a release, configure credentials, or sign it for distribution.
 
 [RELEASE_NOTES.md](RELEASE_NOTES.md) is the v0.1.0 release draft and verification
 record to finalize before publication.
+
+## GitHub Actions release workflow
+
+[release.yml](../.github/workflows/release.yml) builds on `macos-15` (Apple Silicon)
+and `windows-2025` (x64). Both jobs use uv 0.9.21 and Python 3.13, install the locked
+dependencies, run Ruff/mypy/pytest, build with PyInstaller, and run the Chromium
+correction/restart/export test against the packaged executable. A failed check
+prevents that build from being attached to a release.
+
+Commit and push the workflow and its helper/tests/docs to the default branch first.
+To try it without creating a release, open **Actions → Release → Run workflow**,
+select the branch, and run it. Download each platform's artifact from the completed
+run; the outer Actions ZIP contains the application's ZIP and its sidecars.
+Manual runs never create or update a GitHub Release, even when run on a tag.
+Actions downloads are retained for 14 days; release attachments persist separately.
+
+To prepare a release:
+
+1. Set the same numeric version in `pyproject.toml` and
+   `src/dynaval/__init__.py`, refresh the lock with `uv lock`, and commit/push.
+2. Tag that commit with the matching `v` prefix and push the tag, for example:
+
+   ```sh
+   git tag -a v0.1.0 -m "DynaVal 0.1.0"
+   git push origin v0.1.0
+   ```
+
+3. Wait for both platform builds in **Actions → Release**. The workflow verifies
+   both ZIPs, checksums and metadata, then creates a **draft prerelease** under
+   **Releases**, with all six download files attached.
+4. Test the downloads on their native platforms, edit the notes, then click
+   **Publish release**. Keep the prerelease checkbox for initial testing builds;
+   clear it when the version is ready for a stable release.
+
+Tags must match the project version exactly, such as `v0.1.0`; the current native
+version resources use numeric major/minor/patch versions. Use GitHub's prerelease
+checkbox for previews. A rerun refreshes files on an existing draft and preserves
+edited notes. It refuses to replace downloads on an already published release;
+use a new version/tag for that case.
+
+The workflow uses the automatic `GITHUB_TOKEN`; no personal access token is needed.
+Only the draft-release job requests `contents: write`. Repository/organization
+Actions policy must allow the pinned GitHub actions, Astral's setup-uv action, and
+that permission. Build jobs have read-only repository access. Signing credentials
+are not configured. Automated browser tests do not replace the native and
+clean-machine checks below. The first hosted Windows/macOS runs remain to be
+verified after this workflow is pushed.
+
+References: [GitHub runner platforms](https://docs.github.com/en/actions/reference/runners/github-hosted-runners),
+[manual workflow runs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow),
+and [draft releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
 
 ## Build and archive
 
