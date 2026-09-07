@@ -13,12 +13,20 @@ dependencies = [
     "pywebview>=6.2.1",
 ]
 
+[project.scripts]
+dynaval = "dynaval.app:main"
+
+[build-system]
+requires = ["uv_build>=0.9.21,<0.10.0"]
+build-backend = "uv_build"
+
 [dependency-groups]
 build = [
     "pyinstaller>=6.22.2",
 ]
 dev = [
     "mypy>=2.3.1",
+    "playwright>=1.62.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
@@ -41,3 +49,10 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["dynaval"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true

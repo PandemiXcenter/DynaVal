@@ -18,3 +18,4 @@ dist/
 .nicegui/
 .dynaval/
 .DS_Store
+output/playwright/
